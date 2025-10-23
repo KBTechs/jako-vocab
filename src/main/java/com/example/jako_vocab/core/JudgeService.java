@@ -32,20 +32,20 @@ public class JudgeService {
     public Outcome judge(String direction, String userText) {
         String norm = normalize(userText);
 
+        // ① ループ側の呼び出しを言語別にする
         if ("KO_JA".equalsIgnoreCase(direction) || "BOTH".equalsIgnoreCase(direction)) {
             for (var e : JA_VARIANTS.entrySet()) {
                 for (var v : e.getValue()) {
-                    if (match(norm, normalize(v))) {
+                    if (matchJa(norm, normalize(v))) { // ← ここを matchJa に
                         return new Outcome(true, e.getKey(), "丁寧：ありがとうございます。韓国語は “감사합니다”。");
                     }
                 }
             }
         }
-
         if ("JA_KO".equalsIgnoreCase(direction) || "BOTH".equalsIgnoreCase(direction)) {
             for (var e : KO_VARIANTS.entrySet()) {
                 for (var v : e.getValue()) {
-                    if (match(norm, normalize(v))) {
+                    if (matchKo(norm, normalize(v))) { // ← ここを matchKo に
                         return new Outcome(true, e.getKey(), "カジュアル：고마워。丁寧：감사합니다。");
                     }
                 }
@@ -90,4 +90,34 @@ public class JudgeService {
     private static boolean isJapanese(int cp) {
         return (cp >= 0x3040 && cp <= 0x309F) || (cp >= 0x30A0 && cp <= 0x30FF) || (cp >= 0x4E00 && cp <= 0x9FFF);
     }
+
+    // ② match を言語別に分ける（置き換え）
+    private static boolean matchKo(String userNorm, String variantNorm) {
+        if (variantNorm.length() < 3)
+            return false;
+        int idx = userNorm.indexOf(variantNorm);
+        if (idx < 0)
+            return false;
+        int before = idx - 1;
+        int after = idx + variantNorm.length();
+        boolean leftKO = before >= 0 && isHangul(userNorm.codePointAt(before));
+        boolean rightKO = after < userNorm.length() && isHangul(userNorm.codePointAt(after));
+        // 韓国語の語中一致だけを弾く（隣が日本語ならOK）
+        return !(leftKO || rightKO);
+    }
+
+    private static boolean matchJa(String userNorm, String variantNorm) {
+        if (variantNorm.length() < 3)
+            return false;
+        int idx = userNorm.indexOf(variantNorm);
+        if (idx < 0)
+            return false;
+        int before = idx - 1;
+        int after = idx + variantNorm.length();
+        boolean leftJA = before >= 0 && isJapanese(userNorm.codePointAt(before));
+        boolean rightJA = after < userNorm.length() && isJapanese(userNorm.codePointAt(after));
+        // 日本語の語中一致だけを弾く（隣がハングルならOK）
+        return !(leftJA || rightJA);
+    }
+
 }
