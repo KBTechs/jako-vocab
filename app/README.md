@@ -54,6 +54,38 @@ flutter doctor
    flutter run
    ```
 
+### 4. シミュレータで試す
+
+**iOS シミュレータ（Mac のみ）**
+
+1. Xcode をインストールし、一度起動して「Xcode の初期設定」を完了する。
+2. シミュレータを起動する（Xcode → Open Developer Tool → Simulator、またはターミナルで）:
+   ```bash
+   open -a Simulator
+   ```
+3. アプリを iOS で実行:
+   ```bash
+   cd app
+   flutter run -d "iPhone"
+   ```
+   「iPhone」の代わりに `flutter devices` で表示されるデバイス名（例: `iPhone 16`）を指定してもよい。
+
+**Android エミュレータ**
+
+1. [Android Studio](https://developer.android.com/studio) をインストール。
+2. Android Studio で **Device Manager** を開き、仮想デバイス（AVD）を1つ作成する。
+3. エミュレータを起動してから:
+   ```bash
+   cd app
+   flutter run -d emulator-5554
+   ```
+   または `flutter run` で一覧から選ぶ。
+
+**利用可能なデバイスを確認**
+   ```bash
+   flutter devices
+   ```
+
 ## 構成
 
 - `lib/main.dart` - エントリポイント、通知の初期化

@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz_data;
@@ -27,6 +28,9 @@ class NotificationService {
     const ios = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
+      defaultPresentAlert: true,
+      defaultPresentBanner: true,
+      defaultPresentSound: true,
     );
     const initSettings = InitializationSettings(android: android, iOS: ios);
     await _plugin.initialize(
@@ -36,16 +40,19 @@ class NotificationService {
     await _createChannel();
     await _requestPermission();
     _initialized = true;
+    debugPrint('[NotificationService] Initialized');
   }
 
   Future<void> _requestPermission() async {
     final android = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
     if (android != null) {
-      await android.requestNotificationsPermission();
+      final granted = await android.requestNotificationsPermission();
+      debugPrint('[NotificationService] Android permission granted: $granted');
     }
     final ios = _plugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
     if (ios != null) {
-      await ios.requestPermissions(alert: true, badge: true, sound: true);
+      final granted = await ios.requestPermissions(alert: true, badge: true, sound: true);
+      debugPrint('[NotificationService] iOS permission granted: $granted');
     }
   }
 
@@ -82,7 +89,11 @@ class NotificationService {
       importance: Importance.defaultImportance,
       priority: Priority.defaultPriority,
     );
-    const iosDetails = DarwinNotificationDetails();
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBanner: true,
+      presentSound: true,
+    );
     const details = NotificationDetails(android: androidDetails, iOS: iosDetails);
 
     switch (frequency) {
@@ -139,5 +150,41 @@ class NotificationService {
 
   Future<void> cancelAll() async {
     await _plugin.cancelAll();
+  }
+
+  /// 開発用: 今すぐテスト通知を1件表示する（スケジュールには影響しない）
+  Future<void> showTestNotification() async {
+    if (!_initialized) {
+      debugPrint('[NotificationService] showTestNotification: not initialized yet, initializing...');
+      await initialize();
+    }
+    final word = _randomWord();
+    final body = '${word['ja']} (${word['ko']})';
+    debugPrint('[NotificationService] showTestNotification: sending "$body"');
+    const androidDetails = AndroidNotificationDetails(
+      _channelId,
+      _channelName,
+      channelDescription: '単語の通知',
+      importance: Importance.defaultImportance,
+      priority: Priority.defaultPriority,
+    );
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBanner: true,
+      presentSound: true,
+    );
+    const details = NotificationDetails(android: androidDetails, iOS: iosDetails);
+    try {
+      await _plugin.show(
+        999,
+        '単語のお知らせ（テスト）',
+        body,
+        details,
+      );
+      debugPrint('[NotificationService] showTestNotification: show() completed OK');
+    } catch (e, st) {
+      debugPrint('[NotificationService] showTestNotification: ERROR $e');
+      debugPrint('[NotificationService] $st');
+    }
   }
 }

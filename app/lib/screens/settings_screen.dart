@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:jako_vocab_app/services/settings_service.dart';
 import 'package:jako_vocab_app/services/notification_service.dart';
@@ -86,6 +87,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
             value: _notificationEnabled,
             onChanged: _setNotificationEnabled,
           ),
+          if (kDebugMode) ...[
+            const SizedBox(height: 8),
+            Card(
+              margin: const EdgeInsets.only(bottom: 12),
+              child: ListTile(
+                title: const Text('テスト通知を送る'),
+                subtitle: const Text('開発用：今すぐ1件表示'),
+                trailing: const Icon(Icons.notifications_active),
+                onTap: () async {
+                  debugPrint('[Settings] テスト通知ボタン tapped');
+                  await _notifications.showTestNotification();
+                  debugPrint('[Settings] showTestNotification 完了');
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('テスト通知を送りました')),
+                    );
+                  }
+                },
+              ),
+            ),
+          ],
           const SizedBox(height: 24),
           _sectionTitle('学習'),
           Card(
